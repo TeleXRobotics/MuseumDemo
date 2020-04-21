@@ -1,5 +1,8 @@
-var canvas = document.getElementById("renderCanvas");
-
+const canvas = document.getElementById("renderCanvas");
+const bottomJoystickOffset = -50;
+let xAddPos = 0;
+let yAddPos = 0;
+let translateTransform = BABYLON.Vector3.Zero();
 
 const createWall = (scene, position, rotation, alpha) => {
     const wall = BABYLON.Mesh.CreatePlane('ground', 20.0, scene);
@@ -45,6 +48,134 @@ const initDefaultEnvironment = (scene) => {
     );
 }
 
+/**
+ * Make a BABYLON wheel UI
+ * @param {object} props an object that contains the properties of the wheel
+ * @param {string} props.name 
+ * @param {string} props.width 
+ * @param {number} props.thickness 
+ * @param {string} props.color 
+ * @param {number} props.alpha 
+ * @param {string} props.background
+ * @returns BABYLON.GUI.Ellipse
+ */
+const makeWheel = ( props ) => {
+    const rect = new BABYLON.GUI.Ellipse();
+    rect.name = props.name;
+    rect.height = props.width; // regular circle
+    rect.width = props.width;
+    rect.thickness = props.thickness;
+    rect.color = props.color;
+    rect.alpha = props.alpha;
+    rect.background = props.background;
+    rect.paddingLeft = '0px';
+    rect.paddingRight = '0px';
+    rect.paddingTop = '0px';
+    rect.paddingBottom = '0px';
+    rect.isPointerBlocker = true;
+    return rect;
+  };
+
+const initControllerUpdate = (camera, scene) => {
+    // update the camera's position based on
+    // controller input
+    scene.registerBeforeRender(() => {
+      translateTransform = BABYLON.Vector3.TransformCoordinates(
+        new BABYLON.Vector3(xAddPos / 8000, 0, yAddPos / 8000),
+        BABYLON.Matrix.RotationY(camera.rotation.y),
+      );
+      camera.cameraDirection.addInPlace(translateTransform);
+    });
+  };
+
+/**
+ * This function intializes the player's control wheel that allows the
+ * player to navigate the 3D environment
+ * @param {BABYLON.UniversalCamera} camera Babylon Universal Camera object
+ * @param {BABYLON.Scene} scene Babylon scene
+ * @param {BABYLON.GUI.AdvancedDynamicTexture} UITexture UI advanced dynamic texture element
+ * @param {string} color the color of the control wheel
+ * @returns An object containing the outer wheel, the inner wheel, and the puck
+ */
+
+const initControllerWheels = (camera, scene, UITexture, color) => {
+    const controllerWheelContainer = makeWheel({
+        name: 'wheel',
+        width: '200px',
+        thickness: 2,
+        color: color,
+        alpha: 0.5,
+        background: null});
+    controllerWheelContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    controllerWheelContainer.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+    controllerWheelContainer.top = bottomJoystickOffset;
+
+    const controllerInnerWheelContainer = makeWheel({
+        name: 'innerWheel',
+        width: '80px',
+        thickness: 4,
+        color: color,
+        alpha: 0.5,
+        background: null});
+    controllerInnerWheelContainer.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    controllerInnerWheelContainer.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+
+    const controllerPuck = makeWheel({
+        name: 'puck',
+        width: '80px',
+        thickness: 0,
+        color: color,
+        alpha: 0.5,
+        background: color});
+    controllerPuck.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    controllerPuck.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+
+    controllerWheelContainer.onPointerDownObservable.add((coordinates) => {
+        controllerPuck.isVisible = true;
+        controllerPuck.left = coordinates.x - canvas.width * 0.5;
+        controllerPuck.top =
+            (canvas.height -
+            coordinates.y -
+            controllerWheelContainer._currentMeasure.height * 0.5 +
+            bottomJoystickOffset) *
+            -1;
+        controllerWheelContainer.alpha = 0.9;
+    });
+
+    controllerWheelContainer.onPointerUpObservable.add((coordinates) => {
+        // update player movement values
+        xAddPos = 0;
+        yAddPos = 0;
+        controllerPuck.isVisible = false;
+        controllerWheelContainer.alpha = 0.4;
+    });
+
+    controllerWheelContainer.onPointerMoveObservable.add((coordinates) => {
+        if (controllerPuck.isVisible) {
+            xAddPos = coordinates.x - canvas.width * 0.5;
+            yAddPos =
+            canvas.height -
+            coordinates.y -
+            controllerWheelContainer._currentMeasure.height * 0.5 +
+            bottomJoystickOffset;
+            controllerPuck.left = xAddPos;
+            controllerPuck.top = yAddPos * -1.0;
+        }
+    });
+
+    // assign controller relationships
+    controllerWheelContainer.addControl(controllerInnerWheelContainer);
+    controllerWheelContainer.addControl(controllerPuck);
+    UITexture.addControl(controllerWheelContainer);
+    initControllerUpdate(camera, scene);
+
+    controllerPuck.isVisible = false; // initialize puck to be invisible
+    return {
+        outerWheel: controllerWheelContainer,
+        innerWheel: controllerInnerWheelContainer,
+        puck: controllerPuck,
+    };
+}
 
 /**
  * This function initializes the player's camera, collision detection,
@@ -68,6 +199,10 @@ const initializePlayer = (env) => {
     camera.applyGravity = true;
     camera.ellipsoid = new BABYLON.Vector3(1, env.playerHeight, 1);
     camera.checkCollisions = true;
+
+    console.log("initializing controller wheels.");
+    const UITexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
+    initControllerWheels(camera, env.scene, UITexture, 'blue');
     return camera;
 }
 

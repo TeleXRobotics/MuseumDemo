@@ -18,5 +18,11 @@
   "homepage": "https://github.com/aWeirdo/babylonJs_sample_server#readme",
   "dependencies": {
     "express": "^4.16.4"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.1.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.1",
+    "eslint-plugin-prettier": "^3.1.3"
   }
 }
