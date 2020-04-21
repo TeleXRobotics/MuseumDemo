@@ -1,6 +1,6 @@
 const canvas = document.getElementById("renderCanvas");
 const groundHeight = 1000;
-const bottomJoystickOffset = -50;
+const bottomJoystickOffset = -100;
 let xAddPos = 0;
 let yAddPos = 0;
 let translateTransform = BABYLON.Vector3.Zero();
@@ -102,7 +102,7 @@ const initControllerUpdate = (camera, scene) => {
 const initControllerWheels = (camera, scene, UITexture, color) => {
     const controllerWheelContainer = makeWheel({
         name: 'wheel',
-        width: '200px',
+        width: '400px',
         thickness: 2,
         color: color,
         alpha: 0.5,
@@ -113,7 +113,7 @@ const initControllerWheels = (camera, scene, UITexture, color) => {
 
     const controllerInnerWheelContainer = makeWheel({
         name: 'innerWheel',
-        width: '80px',
+        width: '160px',
         thickness: 4,
         color: color,
         alpha: 0.5,
@@ -123,7 +123,7 @@ const initControllerWheels = (camera, scene, UITexture, color) => {
 
     const controllerPuck = makeWheel({
         name: 'puck',
-        width: '80px',
+        width: '160px',
         thickness: 0,
         color: color,
         alpha: 0.5,
@@ -222,8 +222,8 @@ var createScene = function () {
     var fileName;
     
 	// url = "https://raw.githubusercontent.com/BabylonJS/Babylon.js/master/Playground/scenes/BoomBox/";
-	url = "https://raw.githubusercontent.com/caoandong/gov_museum_demo/master/asset/Models/Scene/";
 	// url = "https://raw.githubusercontent.com/caoandong/gov_museum_demo/master/asset/Models/Scene/";
+	url = "https://raw.githubusercontent.com/TeleXRobotics/MuseumDemo/master/asset/Models/Scene/";
     fileName = "scene.gltf";
     const scale = 1;
 
