@@ -1,11 +1,12 @@
 const canvas = document.getElementById("renderCanvas");
+const groundHeight = 1000;
 const bottomJoystickOffset = -50;
 let xAddPos = 0;
 let yAddPos = 0;
 let translateTransform = BABYLON.Vector3.Zero();
 
 const createWall = (scene, position, rotation, alpha) => {
-    const wall = BABYLON.Mesh.CreatePlane('ground', 20.0, scene);
+    const wall = BABYLON.Mesh.CreatePlane('ground', 2000, scene);
     wall.material = new BABYLON.StandardMaterial('groundMat', scene);
     wall.material.alpha = alpha;
     wall.position = position;
@@ -16,7 +17,7 @@ const createWall = (scene, position, rotation, alpha) => {
 const initEnvironment = (scene, wallPoses) => {
     scene.createDefaultLight();
     // create ground
-    createWall(scene, BABYLON.Vector3.Zero(), new BABYLON.Vector3(Math.PI / 2, 0, 0), 1.0);
+    createWall(scene, new BABYLON.Vector3(0, groundHeight, 0), new BABYLON.Vector3(Math.PI / 2, 0, 0), 0.0);
     // create walls
     wallPoses.forEach(element => {
         createWall(scene, element.position, element.rotation, 0.0);
@@ -24,24 +25,24 @@ const initEnvironment = (scene, wallPoses) => {
 };
 
 const initDefaultEnvironment = (scene) => {
-    // initialize a 10 x 5 (meters) box with four walls
+    // initialize a 1000 x 1000 (meters) box with four walls
     initEnvironment(
         scene,
         [
             {
-                position: new BABYLON.Vector3(10, 0, 0),
+                position: new BABYLON.Vector3(1000, groundHeight, 0),
                 rotation: new BABYLON.Vector3(0, Math.PI / 2.0, 0)
             },
             {
-                position: new BABYLON.Vector3(-10, 0, 0),
+                position: new BABYLON.Vector3(-1000, groundHeight, 0),
                 rotation: new BABYLON.Vector3(0, -Math.PI / 2.0, 0)
             },
             {
-                position: new BABYLON.Vector3(0, 0, 5),
+                position: new BABYLON.Vector3(0, groundHeight, 500),
                 rotation: BABYLON.Vector3.Zero()
             },
             {
-                position: new BABYLON.Vector3(0, 0, -5),
+                position: new BABYLON.Vector3(0, groundHeight, -500),
                 rotation: new BABYLON.Vector3(0, Math.PI, 0)
             }
         ]
@@ -81,7 +82,7 @@ const initControllerUpdate = (camera, scene) => {
     // controller input
     scene.registerBeforeRender(() => {
       translateTransform = BABYLON.Vector3.TransformCoordinates(
-        new BABYLON.Vector3(xAddPos / 8000, 0, yAddPos / 8000),
+        new BABYLON.Vector3(xAddPos / 100, 0, yAddPos / 100),
         BABYLON.Matrix.RotationY(camera.rotation.y),
       );
       camera.cameraDirection.addInPlace(translateTransform);
@@ -190,12 +191,13 @@ const initControllerWheels = (camera, scene, UITexture, color) => {
 const initializePlayer = (env) => {
     const camera = new BABYLON.UniversalCamera(
         'UniversalCamera',
-        new BABYLON.Vector3(0, env.playerHeight * 2, -5),
+        new BABYLON.Vector3(0, groundHeight + env.playerHeight * 2, -5),
         env.scene,
     );
 
-    camera.setTarget(new BABYLON.Vector3(0, env.playerHeight, 0));
+    camera.setTarget(new BABYLON.Vector3(0, groundHeight + env.playerHeight, 0));
     camera.attachControl(env.canvas, true);
+    camera.maxZ = 100000;
     camera.applyGravity = true;
     camera.ellipsoid = new BABYLON.Vector3(1, env.playerHeight, 1);
     camera.checkCollisions = true;
@@ -217,19 +219,21 @@ var createScene = function () {
     initDefaultEnvironment(scene);
 
 	var url;
-	var fileName;
-		
-//-- BoomBox.gltf
+    var fileName;
+    
 	// url = "https://raw.githubusercontent.com/BabylonJS/Babylon.js/master/Playground/scenes/BoomBox/";
-	url = "https://raw.githubusercontent.com/caoandong/gov_museum_demo/tree/master/asset/Models/Scene/";
-	fileName = "scene.gltf";
+	url = "https://raw.githubusercontent.com/caoandong/gov_museum_demo/master/asset/Models/Scene/";
+	// url = "https://raw.githubusercontent.com/caoandong/gov_museum_demo/master/asset/Models/Scene/";
+    fileName = "scene.gltf";
+    const scale = 1;
 
 	BABYLON.SceneLoader.ImportMesh("", url, fileName, scene, function (newMeshes) {
-		var mesh = newMeshes[0];
-			mesh.position.copyFromFloats(0, 1, 0);
-			mesh.scaling.copyFromFloats(100,100,100);
-			
-		camera.target = mesh;
+        console.log("Loaded " + newMeshes.length + " meshes.");
+        // newMeshes.forEach((mesh) => {
+        //     mesh.position.copyFromFloats(0, -1 * groundHeight, 0);
+        //     mesh.scaling.copyFromFloats(scale,scale,scale);
+        // })		
+		camera.target = newMeshes[0];
 	});
     return scene;
 };
