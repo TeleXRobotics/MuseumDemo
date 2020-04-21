@@ -220,8 +220,9 @@ var createScene = function () {
 	var fileName;
 		
 //-- BoomBox.gltf
-	url = "https://raw.githubusercontent.com/BabylonJS/Babylon.js/master/Playground/scenes/BoomBox/";
-	fileName = "BoomBox.gltf";
+	// url = "https://raw.githubusercontent.com/BabylonJS/Babylon.js/master/Playground/scenes/BoomBox/";
+	url = "https://raw.githubusercontent.com/caoandong/gov_museum_demo/tree/master/asset/Models/Scene/";
+	fileName = "scene.gltf";
 
 	BABYLON.SceneLoader.ImportMesh("", url, fileName, scene, function (newMeshes) {
 		var mesh = newMeshes[0];
