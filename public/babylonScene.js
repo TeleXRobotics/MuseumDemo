@@ -6,7 +6,7 @@ let yAddPos = 0;
 let translateTransform = BABYLON.Vector3.Zero();
 
 const createWall = (scene, position, rotation, alpha) => {
-    const wall = BABYLON.Mesh.CreatePlane('ground', 2000, scene);
+    const wall = BABYLON.Mesh.CreatePlane('ground', 10000, scene);
     wall.material = new BABYLON.StandardMaterial('groundMat', scene);
     wall.material.alpha = alpha;
     wall.position = position;
@@ -30,19 +30,19 @@ const initDefaultEnvironment = (scene) => {
         scene,
         [
             {
-                position: new BABYLON.Vector3(1000, groundHeight, 0),
+                position: new BABYLON.Vector3(5000, groundHeight, 0),
                 rotation: new BABYLON.Vector3(0, Math.PI / 2.0, 0)
             },
             {
-                position: new BABYLON.Vector3(-1000, groundHeight, 0),
+                position: new BABYLON.Vector3(-5000, groundHeight, 0),
                 rotation: new BABYLON.Vector3(0, -Math.PI / 2.0, 0)
             },
             {
-                position: new BABYLON.Vector3(0, groundHeight, 500),
+                position: new BABYLON.Vector3(0, groundHeight, 1000),
                 rotation: BABYLON.Vector3.Zero()
             },
             {
-                position: new BABYLON.Vector3(0, groundHeight, -500),
+                position: new BABYLON.Vector3(0, groundHeight, -1000),
                 rotation: new BABYLON.Vector3(0, Math.PI, 0)
             }
         ]
@@ -198,6 +198,7 @@ const initializePlayer = (env) => {
     // navigation
     camera.setTarget(new BABYLON.Vector3(0, groundHeight + env.playerHeight, 0));
     camera.attachControl(env.canvas, true);
+    camera.touchAngularSensibility = 1000;
     camera.touchMoveSensibility = 0;
     camera.maxZ = 100000;
 
