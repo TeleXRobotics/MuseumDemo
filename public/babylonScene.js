@@ -195,9 +195,13 @@ const initializePlayer = (env) => {
         env.scene,
     );
 
+    // navigation
     camera.setTarget(new BABYLON.Vector3(0, groundHeight + env.playerHeight, 0));
     camera.attachControl(env.canvas, true);
+    camera.touchMoveSensibility = 0;
     camera.maxZ = 100000;
+
+    // collision detection
     camera.applyGravity = true;
     camera.ellipsoid = new BABYLON.Vector3(1, env.playerHeight, 1);
     camera.checkCollisions = true;
