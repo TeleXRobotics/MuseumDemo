@@ -1,9 +1,11 @@
 const canvas = document.getElementById("renderCanvas");
 const groundHeight = 1000;
+const playerHeight = 1;
 const bottomJoystickOffset = -100;
 let xAddPos = 0;
 let yAddPos = 0;
 let translateTransform = BABYLON.Vector3.Zero();
+let startFadeIn = false;
 
 const createWall = (scene, position, rotation, alpha) => {
     const wall = BABYLON.Mesh.CreatePlane('ground', 10000, scene);
@@ -14,8 +16,13 @@ const createWall = (scene, position, rotation, alpha) => {
     wall.checkCollisions = true;
 };
 
+const initSkyBox = (scene) => {
+    scene.clearColor = new BABYLON.Color3(1.0, 0.985, 0.96);
+}
+
 const initEnvironment = (scene, wallPoses) => {
     scene.createDefaultLight();
+    initSkyBox(scene);
     // create ground
     createWall(scene, new BABYLON.Vector3(0, groundHeight, 0), new BABYLON.Vector3(Math.PI / 2, 0, 0), 0.0);
     // create walls
@@ -48,7 +55,6 @@ const initDefaultEnvironment = (scene) => {
         ]
     );
 }
-
 /**
  * Make a BABYLON wheel UI
  * @param {object} props an object that contains the properties of the wheel
@@ -179,48 +185,75 @@ const initControllerWheels = (camera, scene, UITexture, color) => {
 }
 
 /**
- * This function initializes the player's camera, collision detection,
- * and gravity
+ * This function initializes the player's camera
  * @param {object} env description of the project environment variables,
  * including scene, canvas, and playerHeight
  * @param {BABYLON.Scene} env.scene BABYLON Scene
  * @param {HTMLCanvasElement} env.canvas the html canvas
- * @param {number} env.playerHeight the height of the player
  * @returns {BABYLON.FreeCamera} the player's camera object
  */
-const initializePlayer = (env) => {
+const initializePlayerCamera = (env) => {
     const camera = new BABYLON.FreeCamera(
         'PlayerCamera',
-        new BABYLON.Vector3(0, groundHeight + env.playerHeight * 2, -5),
+        new BABYLON.Vector3(0, groundHeight + playerHeight * 2, -5),
         env.scene,
     );
 
     // navigation
-    camera.setTarget(new BABYLON.Vector3(0, groundHeight + env.playerHeight, 0));
+    camera.setTarget(new BABYLON.Vector3(0, groundHeight + playerHeight, 0));
     camera.attachControl(env.canvas, true);
     camera.maxZ = 100000;
+    return camera
+}
 
+/**
+ * This function initializes the player camera's collision detection and gravity
+ * @param {object} env description of the project environment variables,
+ * including scene, canvas, and playerHeight
+ * @param {BABYLON.Scene} env.scene BABYLON Scene
+ * @param {HTMLCanvasElement} env.canvas the html canvas
+ * @param {BABYLON.GUI.AdvancedDynamicTexture} env.AdvancedDynamicTexture the UI texture
+ * @param {BABYLON.FreeCamera} env.camera player's camera object
+ */
+const initializePlayer = (env) => {
     // collision detection
-    camera.applyGravity = true;
-    camera.ellipsoid = new BABYLON.Vector3(1, env.playerHeight, 1);
-    camera.checkCollisions = true;
+    env.camera.applyGravity = true;
+    env.camera.ellipsoid = new BABYLON.Vector3(1, playerHeight, 1);
+    env.camera.checkCollisions = true;
 
     console.log("initializing controller wheels.");
-    const UITexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
-    initControllerWheels(camera, env.scene, UITexture, 'blue');
-    return camera;
+    initControllerWheels(env.camera, env.scene, env.AdvancedDynamicTexture, 'blue');
 }
 
 var createScene = function () {
     var scene = new BABYLON.Scene(engine);
-	const camera = initializePlayer({
+    const camera = initializePlayerCamera({
         scene: scene,
-        canvas: canvas,
-        playerHeight: 1
+        canvas: canvas
     });
-	
-    initDefaultEnvironment(scene);
-
+    const UITexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
+    
+    const backgroundRect = new BABYLON.GUI.Rectangle();
+    backgroundRect.alpha = 1;
+    backgroundRect.background = "White";
+    UITexture.addControl(backgroundRect);
+    startFadeIn = false;
+    scene.registerBeforeRender(() => {
+        if (startFadeIn) {
+            backgroundRect.alpha -= 0.02;
+            if (backgroundRect.alpha <= 0.1) {
+                backgroundRect.alpha = 0.0;
+                startFadeIn = false;
+            }
+        }
+    });
+    
+    const textBlock = new BABYLON.GUI.TextBlock();
+    textBlock.text = "Initalizing scene ...";
+    textBlock.color = "Black";
+    textBlock.fontSize = 24;
+    UITexture.addControl(textBlock);
+    
 	var url;
     var fileName;
     
@@ -229,15 +262,22 @@ var createScene = function () {
 	url = "https://raw.githubusercontent.com/TeleXRobotics/MuseumDemo/master/asset/Models/Scene/";
     fileName = "scene.gltf";
     const scale = 1;
-
-	BABYLON.SceneLoader.ImportMesh("", url, fileName, scene, function (newMeshes) {
+    
+    BABYLON.SceneLoader.ImportMesh("", url, fileName, scene, function (newMeshes) {
         console.log("Loaded " + newMeshes.length + " meshes.");
-        // newMeshes.forEach((mesh) => {
-        //     mesh.position.copyFromFloats(0, -1 * groundHeight, 0);
-        //     mesh.scaling.copyFromFloats(scale,scale,scale);
-        // })		
 		camera.target = newMeshes[0];
-	});
+        initializePlayer({
+            scene: scene,
+            canvas: canvas,
+            camera: camera,
+            AdvancedDynamicTexture: UITexture
+        });
+        initDefaultEnvironment(scene);
+        startFadeIn = true;
+        textBlock.alpha = 0;
+	}, function (progressEvent) {
+        textBlock.text = JSON.stringify(progressEvent.loaded);
+    });
     return scene;
 };
 
