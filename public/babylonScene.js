@@ -92,7 +92,7 @@ const initControllerUpdate = (camera, scene) => {
 /**
  * This function intializes the player's control wheel that allows the
  * player to navigate the 3D environment
- * @param {BABYLON.UniversalCamera} camera Babylon Universal Camera object
+ * @param {BABYLON.FreeCamera} camera Babylon Universal Camera object
  * @param {BABYLON.Scene} scene Babylon scene
  * @param {BABYLON.GUI.AdvancedDynamicTexture} UITexture UI advanced dynamic texture element
  * @param {string} color the color of the control wheel
@@ -186,11 +186,11 @@ const initControllerWheels = (camera, scene, UITexture, color) => {
  * @param {BABYLON.Scene} env.scene BABYLON Scene
  * @param {HTMLCanvasElement} env.canvas the html canvas
  * @param {number} env.playerHeight the height of the player
- * @returns {BABYLON.UniversalCamera} the player's camera object
+ * @returns {BABYLON.FreeCamera} the player's camera object
  */
 const initializePlayer = (env) => {
-    const camera = new BABYLON.UniversalCamera(
-        'UniversalCamera',
+    const camera = new BABYLON.FreeCamera(
+        'PlayerCamera',
         new BABYLON.Vector3(0, groundHeight + env.playerHeight * 2, -5),
         env.scene,
     );
@@ -198,8 +198,6 @@ const initializePlayer = (env) => {
     // navigation
     camera.setTarget(new BABYLON.Vector3(0, groundHeight + env.playerHeight, 0));
     camera.attachControl(env.canvas, true);
-    camera.touchAngularSensibility = 1000;
-    camera.touchMoveSensibility = 0;
     camera.maxZ = 100000;
 
     // collision detection
