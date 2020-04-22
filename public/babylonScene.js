@@ -8,7 +8,7 @@ let translateTransform = BABYLON.Vector3.Zero();
 let startFadeIn = false;
 
 const createWall = (scene, position, rotation, alpha) => {
-    const wall = BABYLON.Mesh.CreatePlane('ground', 10000, scene);
+    const wall = BABYLON.Mesh.CreatePlane('ground', 100000, scene);
     wall.material = new BABYLON.StandardMaterial('groundMat', scene);
     wall.material.alpha = alpha;
     wall.position = position;
@@ -20,7 +20,7 @@ const initSkyBox = (scene) => {
     scene.clearColor = new BABYLON.Color3(1.0, 0.985, 0.96);
 }
 
-const initEnvironment = (scene, wallPoses) => {
+const initBoxEnvironment = (scene, wallPoses) => {
     scene.createDefaultLight();
     initSkyBox(scene);
     // create ground
@@ -31,25 +31,43 @@ const initEnvironment = (scene, wallPoses) => {
     });
 };
 
+// radius = 10000
+const initCylinderEnvironment = (scene) => {
+    const radius = 10000;
+    const height = 10 * groundHeight;
+    const groundPosition = new BABYLON.Vector3(0, groundHeight, 0);
+    const wallPosition = new BABYLON.Vector3(0, height / 2.0, 0);
+    // create ground
+    createWall(scene, groundPosition, new BABYLON.Vector3(Math.PI / 2, 0, 0), 0.0);
+    // create walls
+    const wall = BABYLON.MeshBuilder.CreateCylinder("cone", {height: height, diameter: radius * 2, sideOrientation: BABYLON.Mesh.DOUBLESIDE}, scene);
+    wall.material = new BABYLON.StandardMaterial('groundMat', scene);
+    wall.material.alpha = 0;
+    wall.position = wallPosition;
+    wall.checkCollisions = true;
+    scene.createDefaultLight();
+    initSkyBox(scene);
+}
+
 const initDefaultEnvironment = (scene) => {
     // initialize a 1000 x 1000 (meters) box with four walls
-    initEnvironment(
+    initBoxEnvironment(
         scene,
         [
             {
-                position: new BABYLON.Vector3(5000, groundHeight, 0),
+                position: new BABYLON.Vector3(50000, groundHeight, 0),
                 rotation: new BABYLON.Vector3(0, Math.PI / 2.0, 0)
             },
             {
-                position: new BABYLON.Vector3(-5000, groundHeight, 0),
+                position: new BABYLON.Vector3(-50000, groundHeight, 0),
                 rotation: new BABYLON.Vector3(0, -Math.PI / 2.0, 0)
             },
             {
-                position: new BABYLON.Vector3(0, groundHeight, 1000),
+                position: new BABYLON.Vector3(0, groundHeight, 10000),
                 rotation: BABYLON.Vector3.Zero()
             },
             {
-                position: new BABYLON.Vector3(0, groundHeight, -1000),
+                position: new BABYLON.Vector3(0, groundHeight, -10000),
                 rotation: new BABYLON.Vector3(0, Math.PI, 0)
             }
         ]
@@ -231,6 +249,7 @@ var createScene = function () {
         scene: scene,
         canvas: canvas
     });
+
     const UITexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
     
     const backgroundRect = new BABYLON.GUI.Rectangle();
@@ -247,7 +266,7 @@ var createScene = function () {
             }
         }
     });
-    
+
     const textBlock = new BABYLON.GUI.TextBlock();
     textBlock.text = "Initalizing scene ...";
     textBlock.color = "Black";
@@ -272,11 +291,12 @@ var createScene = function () {
             camera: camera,
             AdvancedDynamicTexture: UITexture
         });
-        initDefaultEnvironment(scene);
+        // initDefaultEnvironment(scene);
+        initCylinderEnvironment(scene);
         startFadeIn = true;
         textBlock.alpha = 0;
 	}, function (progressEvent) {
-        textBlock.text = JSON.stringify(progressEvent.loaded);
+        textBlock.text = JSON.stringify(100 * (progressEvent.loaded / progressEvent.total).toPrecision(2)) + "%";
     });
     return scene;
 };
