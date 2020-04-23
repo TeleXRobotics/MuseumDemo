@@ -1,4 +1,10 @@
 const canvas = document.getElementById("renderCanvas");
+const loadingScreen = document.getElementById("loadingScreen");
+const progressRingCircle = document.querySelector('.progress-ring__circle');
+const progressRingCircleRadius = progressRingCircle.r.baseVal.value;
+const progressRingCircleCircumference = progressRingCircleRadius * 2 * Math.PI;
+progressRingCircle.style.strokeDasharray = `${progressRingCircleCircumference} ${progressRingCircleCircumference}`;
+progressRingCircle.style.strokeDashoffset = `${progressRingCircleCircumference}`;
 const groundHeight = 1000;
 const playerHeight = 1;
 const bottomJoystickOffset = -100;
@@ -6,6 +12,26 @@ let xAddPos = 0;
 let yAddPos = 0;
 let translateTransform = BABYLON.Vector3.Zero();
 let startFadeIn = false;
+
+const setProgressRing = (percent) => {
+    percent = (percent > 1.0) ? 1.0 : percent;
+    const offset = (1.0 - percent) * progressRingCircleCircumference;
+    progressRingCircle.style.strokeDashoffset = offset;
+}
+
+const displayLoadingScreen = () => {
+    loadingScreen.style.display = "block";
+    console.log("display loading screen ...");
+}
+
+const hideLoadingScreen = () => {
+    loadingScreen.style.display = "none";
+    console.log("hide loading screen ...");
+}
+
+BABYLON.DefaultLoadingScreen.prototype.displayLoadingUI = displayLoadingScreen;
+
+BABYLON.DefaultLoadingScreen.prototype.hideLoadingUI = hideLoadingScreen;
 
 const createWall = (scene, position, rotation, alpha) => {
     const wall = BABYLON.Mesh.CreatePlane('ground', 100000, scene);
@@ -244,6 +270,7 @@ const initializePlayer = (env) => {
 }
 
 var createScene = function () {
+    engine.displayLoadingUI();
     var scene = new BABYLON.Scene(engine);
     const camera = initializePlayerCamera({
         scene: scene,
@@ -252,26 +279,27 @@ var createScene = function () {
 
     const UITexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
     
-    const backgroundRect = new BABYLON.GUI.Rectangle();
-    backgroundRect.alpha = 1;
-    backgroundRect.background = "White";
-    UITexture.addControl(backgroundRect);
-    startFadeIn = false;
-    scene.registerBeforeRender(() => {
-        if (startFadeIn) {
-            backgroundRect.alpha -= 0.02;
-            if (backgroundRect.alpha <= 0.1) {
-                backgroundRect.alpha = 0.0;
-                startFadeIn = false;
-            }
-        }
-    });
+    // Create Babylon loading screen UI element
+    // const backgroundRect = new BABYLON.GUI.Rectangle();
+    // backgroundRect.alpha = 1;
+    // backgroundRect.background = "White";
+    // UITexture.addControl(backgroundRect);
+    // startFadeIn = false;
+    // scene.registerBeforeRender(() => {
+    //     if (startFadeIn) {
+    //         backgroundRect.alpha -= 0.02;
+    //         if (backgroundRect.alpha <= 0.1) {
+    //             backgroundRect.alpha = 0.0;
+    //             startFadeIn = false;
+    //         }
+    //     }
+    // });
 
-    const textBlock = new BABYLON.GUI.TextBlock();
-    textBlock.text = "Initalizing scene ...";
-    textBlock.color = "Black";
-    textBlock.fontSize = 24;
-    UITexture.addControl(textBlock);
+    // const textBlock = new BABYLON.GUI.TextBlock();
+    // textBlock.text = "Initalizing scene ...";
+    // textBlock.color = "Black";
+    // textBlock.fontSize = 24;
+    // UITexture.addControl(textBlock);
     
 	var url;
     var fileName;
@@ -280,9 +308,9 @@ var createScene = function () {
 	// url = "https://raw.githubusercontent.com/caoandong/gov_museum_demo/master/asset/Models/Scene/";
 	url = "https://raw.githubusercontent.com/TeleXRobotics/MuseumDemo/master/asset/Models/Scene/";
     fileName = "scene.gltf";
-    const scale = 1;
     
     BABYLON.SceneLoader.ImportMesh("", url, fileName, scene, function (newMeshes) {
+        // onSuccess
         console.log("Loaded " + newMeshes.length + " meshes.");
 		camera.target = newMeshes[0];
         initializePlayer({
@@ -293,10 +321,19 @@ var createScene = function () {
         });
         // initDefaultEnvironment(scene);
         initCylinderEnvironment(scene);
-        startFadeIn = true;
-        textBlock.alpha = 0;
+        // startFadeIn = true;
+        // textBlock.alpha = 0;
+        engine.hideLoadingUI();
 	}, function (progressEvent) {
-        textBlock.text = JSON.stringify(100 * (progressEvent.loaded / progressEvent.total).toPrecision(2)) + "%";
+        // onProgress
+        let loadedPercent = 0;
+        if (progressEvent.lengthComputable) {
+            loadedPercent = (progressEvent.loaded * 100 / progressEvent.total).toFixed();
+        } else {
+            var dlCount = progressEvent.loaded / (1024 * 1024);
+            loadedPercent = Math.floor(dlCount * 100.0) / 100.0;
+        }
+        setProgressRing(loadedPercent);
     });
     return scene;
 };

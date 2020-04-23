@@ -23,6 +23,18 @@
         <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
 
         <style>
+            /* disable selection */
+            * {
+                font-family: Tahoma, Helvetica, Arial, "Microsoft Yahei","微软雅黑", STXihei, "华文细黑", sans-serif;
+                -webkit-touch-callout:none;
+                -webkit-user-select:none;
+                -khtml-user-select:none;
+                -moz-user-select:none;
+                -ms-user-select:none;
+                user-select:none;
+                -webkit-tap-highlight-color:rgba(0,0,0,0);
+            }
+
             html, body {
                 overflow: hidden;
                 width: 100%;
@@ -36,9 +48,49 @@
                 height: 100%;
                 touch-action: none;
             }
+
+            #loadingScreen {
+                position: absolute;
+                padding-top: 20%;
+                width: 100%;
+                height: 100%;
+                font-size: 50px;
+                text-align: center;
+                background-color: white;
+                z-index: 9999;
+            }
+
+            .progress-ring__circle {
+                transition: stroke-dashoffset 0.35s;
+                transform: rotate(-90deg);
+                transform-origin: 50% 50%,
+            }
         </style>
     </head>
 <body>
+    <div id="loadingScreen">
+        <a href="https://sm.ms/image/ylZxK2Ntjg9e1np" target="_blank">
+            <img src="https://i.loli.net/2020/04/24/ylZxK2Ntjg9e1np.png" >
+        </a>
+        <h3>党建空间小样演示</h3>
+        <svg class="progress-ring" height="120" width="120">
+            <!-- 
+                the radius of the circle should be
+                radius = (width / 2) - (strokeWidth * 2)
+                to prevent the circle to overflow the svg wrapper
+            -->
+            <circle
+                class="progress-ring__circle"
+                stroke="#2962FF"
+                stroke-width="6"
+                stroke-linecap="round"
+                fill="transparent"
+                r="48" 
+                cx="-60"
+                cy="60"
+            />
+        </svg>
+    </div>
     <canvas id="renderCanvas"></canvas>
     <script src="./babylonScene.js"></script>
 </body>
