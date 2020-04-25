@@ -323,7 +323,8 @@ var createScene = function () {
 
     const displayPanelNavGrid = new BABYLON.GUI.Grid();
     displayPanelNavGrid.width = 1;
-    displayPanelNavGrid.height = 1;
+    displayPanelNavGrid.height = "60px";
+    displayPanelNavGrid.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
     displayPanelNavGrid.addColumnDefinition(0.2);
     displayPanelNavGrid.addColumnDefinition(0.6);
     displayPanelNavGrid.addColumnDefinition(0.2);
@@ -332,7 +333,7 @@ var createScene = function () {
     const displayPanelNavClose = BABYLON.GUI.Button.CreateImageOnlyButton("close", "icons/close.png");
     displayPanelNavClose.width = "38px";
     displayPanelNavClose.height = "38px";
-    displayPanelGrid.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    displayPanelNavClose.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
     displayPanelNavClose.onPointerClickObservable.add(() => {
         displayPanel.isVisible = false;
         constrollerWheelContainer.isVisible = true;
