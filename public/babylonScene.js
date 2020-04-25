@@ -1,4 +1,6 @@
 const canvas = document.getElementById("renderCanvas");
+let mainScene;
+let playerCamera;
 const loadingScreen = document.getElementById("loadingScreen");
 const progressRingCircle = document.querySelector('.progress-ring__circle');
 const progressRingCircleRadius = progressRingCircle.r.baseVal.value;
@@ -11,7 +13,12 @@ const bottomJoystickOffset = -100;
 let xAddPos = 0;
 let yAddPos = 0;
 let translateTransform = BABYLON.Vector3.Zero();
-let startFadeIn = false;
+
+// game elements
+let constrollerWheelContainer;
+let displayPanel;
+let textBlock;
+let textContainer;
 
 const setProgressRing = (percent) => {
     percent = (percent > 1.0) ? 1.0 : percent;
@@ -46,59 +53,26 @@ const initSkyBox = (scene) => {
     scene.clearColor = new BABYLON.Color3(1.0, 0.985, 0.96);
 }
 
-const initBoxEnvironment = (scene, wallPoses) => {
-    scene.createDefaultLight();
-    initSkyBox(scene);
-    // create ground
-    createWall(scene, new BABYLON.Vector3(0, groundHeight, 0), new BABYLON.Vector3(Math.PI / 2, 0, 0), 0.0);
-    // create walls
-    wallPoses.forEach(element => {
-        createWall(scene, element.position, element.rotation, 0.0);
-    });
-};
-
 // radius = 10000
 const initCylinderEnvironment = (scene) => {
-    const radius = 10000;
+    const radius = 13784.7;
+    const centerX = -3094.73;
+    const centerZ = -1783.03;
     const height = 10 * groundHeight;
     const groundPosition = new BABYLON.Vector3(0, groundHeight, 0);
-    const wallPosition = new BABYLON.Vector3(0, height / 2.0, 0);
+    const wallPosition = new BABYLON.Vector3(centerX, height / 2.0, centerZ);
     // create ground
     createWall(scene, groundPosition, new BABYLON.Vector3(Math.PI / 2, 0, 0), 0.0);
     // create walls
-    const wall = BABYLON.MeshBuilder.CreateCylinder("cone", {height: height, diameter: radius * 2, sideOrientation: BABYLON.Mesh.DOUBLESIDE}, scene);
+    const wall = BABYLON.MeshBuilder.CreateCylinder("wall", {height: height, diameter: radius * 2, sideOrientation: BABYLON.Mesh.BACKSIDE}, scene);
     wall.material = new BABYLON.StandardMaterial('groundMat', scene);
-    wall.material.alpha = 0;
+    wall.material.alpha = 0.0;
     wall.position = wallPosition;
     wall.checkCollisions = true;
     scene.createDefaultLight();
     initSkyBox(scene);
 }
 
-const initDefaultEnvironment = (scene) => {
-    // initialize a 1000 x 1000 (meters) box with four walls
-    initBoxEnvironment(
-        scene,
-        [
-            {
-                position: new BABYLON.Vector3(50000, groundHeight, 0),
-                rotation: new BABYLON.Vector3(0, Math.PI / 2.0, 0)
-            },
-            {
-                position: new BABYLON.Vector3(-50000, groundHeight, 0),
-                rotation: new BABYLON.Vector3(0, -Math.PI / 2.0, 0)
-            },
-            {
-                position: new BABYLON.Vector3(0, groundHeight, 10000),
-                rotation: BABYLON.Vector3.Zero()
-            },
-            {
-                position: new BABYLON.Vector3(0, groundHeight, -10000),
-                rotation: new BABYLON.Vector3(0, Math.PI, 0)
-            }
-        ]
-    );
-}
 /**
  * Make a BABYLON wheel UI
  * @param {object} props an object that contains the properties of the wheel
@@ -131,11 +105,12 @@ const initControllerUpdate = (camera, scene) => {
     // update the camera's position based on
     // controller input
     scene.registerBeforeRender(() => {
-      translateTransform = BABYLON.Vector3.TransformCoordinates(
-        new BABYLON.Vector3(xAddPos / 100, 0, yAddPos / 100),
-        BABYLON.Matrix.RotationY(camera.rotation.y),
-      );
-      camera.cameraDirection.addInPlace(translateTransform);
+        // console.log(camera.position);
+        translateTransform = BABYLON.Vector3.TransformCoordinates(
+            new BABYLON.Vector3(xAddPos / 80, 0, yAddPos / 80),
+            BABYLON.Matrix.RotationY(camera.rotation.y),
+        );
+        camera.cameraDirection.addInPlace(translateTransform);
     });
   };
 
@@ -246,6 +221,7 @@ const initializePlayerCamera = (env) => {
     // navigation
     camera.setTarget(new BABYLON.Vector3(0, groundHeight + playerHeight, 0));
     camera.attachControl(env.canvas, true);
+    camera.speed = 100;
     camera.maxZ = 100000;
     return camera
 }
@@ -265,8 +241,29 @@ const initializePlayer = (env) => {
     env.camera.ellipsoid = new BABYLON.Vector3(1, playerHeight, 1);
     env.camera.checkCollisions = true;
 
+    
     console.log("initializing controller wheels.");
-    initControllerWheels(env.camera, env.scene, env.AdvancedDynamicTexture, 'blue');
+    const wheels = initControllerWheels(env.camera, env.scene, env.AdvancedDynamicTexture, 'blue');
+    constrollerWheelContainer = wheels.outerWheel;
+}
+
+/**
+ * Handles the event when a mesh is picked up
+ * @param {BABYLON.ActionEvent} actionEvent 
+ */
+const handlePickUp = (actionEvent) => {
+    if (!actionEvent || !actionEvent.source) return;
+    const distanceThreashold = 5000;
+    const distance = playerCamera.position.subtract(actionEvent.source.position).length();
+    console.log(playerCamera.position.subtract(actionEvent.source.position).length());
+    if (distance <= distanceThreashold) {
+        if (displayPanel) {
+            displayPanel.isVisible = true;
+        }
+        if (constrollerWheelContainer) {
+            constrollerWheelContainer.isVisible = false;
+        }
+    }
 }
 
 var createScene = function () {
@@ -276,31 +273,102 @@ var createScene = function () {
         scene: scene,
         canvas: canvas
     });
+    mainScene = scene;
+    playerCamera = camera;
+
+    const actionManager = new BABYLON.ActionManager(scene);
+
+    const textMeshWidth = 1200;
+    const textMeshHeight = 500;
+    const textMesh = BABYLON.MeshBuilder.CreatePlane(
+        'textMesh',
+        {
+            width: textMeshWidth,
+            height: textMeshHeight
+        },
+        scene
+    );
+    textMesh.position = new BABYLON.Vector3(-7214.95, groundHeight + playerHeight, -7508.475);
+    textMesh.isPickable = true;
+    textMesh.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+    textMesh.actionManager = actionManager;
+    actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, handlePickUp));
+    
+    const textMesh_Material = new BABYLON.StandardMaterial('mtextMesh_Mat', scene);
+    const textMesh_DynamicTexture = new BABYLON.DynamicTexture('textMesh_DTX', {width: textMeshWidth/100 * 64, height: textMeshHeight/100 * 64}, scene);
+    textMesh_Material.diffuseColor = new BABYLON.Color3(0.91, 0.929, 0.961);
+    textMesh_Material.emissiveTexture = textMesh_DynamicTexture;
+    textMesh.material = textMesh_Material;
+    textMesh_DynamicTexture.drawText('Text', null, null, 'bold 96px Arial', 'white', null, true, true);
 
     const UITexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
-    
-    // Create Babylon loading screen UI element
-    // const backgroundRect = new BABYLON.GUI.Rectangle();
-    // backgroundRect.alpha = 1;
-    // backgroundRect.background = "White";
-    // UITexture.addControl(backgroundRect);
-    // startFadeIn = false;
-    // scene.registerBeforeRender(() => {
-    //     if (startFadeIn) {
-    //         backgroundRect.alpha -= 0.02;
-    //         if (backgroundRect.alpha <= 0.1) {
-    //             backgroundRect.alpha = 0.0;
-    //             startFadeIn = false;
-    //         }
-    //     }
-    // });
 
-    // const textBlock = new BABYLON.GUI.TextBlock();
-    // textBlock.text = "Initalizing scene ...";
-    // textBlock.color = "Black";
-    // textBlock.fontSize = 24;
-    // UITexture.addControl(textBlock);
+    displayPanel = new BABYLON.GUI.Rectangle();
+    displayPanel.height = "80%";
+    displayPanel.width = "80%";
+    displayPanel.color = "white";
+    displayPanel.background = "white";
+    displayPanel.cornerRadius = 20;
+
+    UITexture.addControl(displayPanel);
+
+    const displayPanelGrid = new BABYLON.GUI.Grid();
+    displayPanelGrid.width = 0.9;
+    displayPanelGrid.height = 0.9;
+    displayPanelGrid.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    displayPanelGrid.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+    displayPanelGrid.addRowDefinition(0.1);
+    displayPanelGrid.addRowDefinition(0.9);
+    displayPanel.addControl(displayPanelGrid);
+
+    const displayPanelNavGrid = new BABYLON.GUI.Grid();
+    displayPanelNavGrid.width = 1;
+    displayPanelNavGrid.height = 1;
+    displayPanelNavGrid.addColumnDefinition(0.2);
+    displayPanelNavGrid.addColumnDefinition(0.6);
+    displayPanelNavGrid.addColumnDefinition(0.2);
+    displayPanelGrid.addControl(displayPanelNavGrid, 0, 0);
+
+    const displayPanelNavClose = BABYLON.GUI.Button.CreateImageOnlyButton("close", "icons/close.png");
+    displayPanelNavClose.width = "38px";
+    displayPanelNavClose.height = "38px";
+    displayPanelGrid.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+    displayPanelNavClose.onPointerClickObservable.add(() => {
+        displayPanel.isVisible = false;
+        constrollerWheelContainer.isVisible = true;
+    });
+    displayPanelNavGrid.addControl(displayPanelNavClose, 0, 2);
+
+    let displayPanelNavText = new BABYLON.GUI.TextBlock();
+    displayPanelNavText.text = "党建信息";
+    displayPanelNavText.color = "black";
+    displayPanelNavText.fontSize = 38;
+    displayPanelNavText.fontStyle = "bold";
+    displayPanelNavText.paddingTop = "5%";
+    displayPanelNavText.paddingBottom = "5%";
+    displayPanelNavText.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+    displayPanelNavGrid.addControl(displayPanelNavText, 0, 1);
+
+    textContainer = new BABYLON.GUI.ScrollViewer();
+    textContainer.height = "100%";
+    textContainer.width = "100%";
+    textContainer.color = "white";
+    textContainer.cornerRadius = 20;
+    displayPanelGrid.addControl(textContainer, 1, 0);
+
+    textBlock = new BABYLON.GUI.TextBlock();
+    textBlock.textWrapping = BABYLON.GUI.TextWrapping.WordWrap;
+    textBlock.text = "你好";
+    textBlock.color = "black";
+    textBlock.fontSize = 24;
+    textBlock.paddingTop = "5%";
+    textBlock.paddingLeft = "30px";
+    textBlock.paddingRight = "20px"
+    textBlock.paddingBottom = "5%";
+    textContainer.addControl(textBlock);
     
+    displayPanel.isVisible = false;
+
 	var url;
     var fileName;
     
@@ -312,17 +380,14 @@ var createScene = function () {
     BABYLON.SceneLoader.ImportMesh("", url, fileName, scene, function (newMeshes) {
         // onSuccess
         console.log("Loaded " + newMeshes.length + " meshes.");
-		camera.target = newMeshes[0];
+        camera.target = newMeshes[0];
         initializePlayer({
             scene: scene,
             canvas: canvas,
             camera: camera,
             AdvancedDynamicTexture: UITexture
         });
-        // initDefaultEnvironment(scene);
         initCylinderEnvironment(scene);
-        // startFadeIn = true;
-        // textBlock.alpha = 0;
         engine.hideLoadingUI();
 	}, function (progressEvent) {
         // onProgress
