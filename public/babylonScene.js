@@ -1,25 +1,32 @@
+// main stuff
 const canvas = document.getElementById("renderCanvas");
-let mainScene;
 let playerCamera;
 const loadingScreen = document.getElementById("loadingScreen");
+
+// progress ring
 const progressRingCircle = document.querySelector('.progress-ring__circle');
 const progressRingCircleRadius = progressRingCircle.r.baseVal.value;
 const progressRingCircleCircumference = progressRingCircleRadius * 2 * Math.PI;
 progressRingCircle.style.strokeDasharray = `${progressRingCircleCircumference} ${progressRingCircleCircumference}`;
 progressRingCircle.style.strokeDashoffset = `${progressRingCircleCircumference}`;
+
+// environment
 const groundHeight = 1000;
 const playerHeight = 1;
 const bottomJoystickOffset = -100;
+
+// navigation
 let xAddPos = 0;
 let yAddPos = 0;
 let translateTransform = BABYLON.Vector3.Zero();
 
-// game elements
+// UI elements
 let constrollerWheelContainer;
 let displayPanel;
 let textBlock;
 let textContainer;
 
+/* --- loading screen section start --- */
 const setProgressRing = (percent) => {
     percent = (percent > 1.0) ? 1.0 : percent;
     const offset = (1.0 - percent) * progressRingCircleCircumference;
@@ -40,6 +47,10 @@ BABYLON.DefaultLoadingScreen.prototype.displayLoadingUI = displayLoadingScreen;
 
 BABYLON.DefaultLoadingScreen.prototype.hideLoadingUI = hideLoadingScreen;
 
+/* --- loading screen section end --- */
+
+/* --- environment section start --- */
+
 const createWall = (scene, position, rotation, alpha) => {
     const wall = BABYLON.Mesh.CreatePlane('ground', 100000, scene);
     wall.material = new BABYLON.StandardMaterial('groundMat', scene);
@@ -53,8 +64,8 @@ const initSkyBox = (scene) => {
     scene.clearColor = new BABYLON.Color3(1.0, 0.985, 0.96);
 }
 
-// radius = 10000
 const initCylinderEnvironment = (scene) => {
+    // radius = 10000 
     const radius = 13784.7;
     const centerX = -3094.73;
     const centerZ = -1783.03;
@@ -72,6 +83,10 @@ const initCylinderEnvironment = (scene) => {
     scene.createDefaultLight();
     initSkyBox(scene);
 }
+
+/* --- environment section end --- */
+
+/* --- UI section start --- */
 
 /**
  * Make a BABYLON wheel UI
@@ -203,6 +218,10 @@ const initControllerWheels = (camera, scene, UITexture, color) => {
     };
 }
 
+/* --- UI section end --- */
+
+/* --- player section start --- */
+
 /**
  * This function initializes the player's camera
  * @param {object} env description of the project environment variables,
@@ -246,6 +265,8 @@ const initializePlayer = (env) => {
     const wheels = initControllerWheels(env.camera, env.scene, env.AdvancedDynamicTexture, 'blue');
     constrollerWheelContainer = wheels.outerWheel;
 }
+
+/* --- player section end --- */
 
 /**
  * Handles the event when a mesh is picked up
@@ -404,6 +425,8 @@ var createScene = function () {
     return scene;
 };
 
+// here is when things actually happen ...
+
 var engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
 var scene = createScene();
 
@@ -413,7 +436,6 @@ engine.runRenderLoop(function () {
 	}
 });
 
-// Resize
 window.addEventListener("resize", function () {
 	engine.resize();
 });
